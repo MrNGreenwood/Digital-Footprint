@@ -2,60 +2,172 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Hidden in Plain Sight</title>
 
   <style>
+    :root {
+      --bg-color: #f2f2f2;
+      --text-color: #222;
+      --card-bg: rgba(255, 255, 255, 0.92);
+    }
+
     body {
       font-family: system-ui, sans-serif;
-      background: #f2f2f2;
-      color: #222;
       padding: 2rem;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      transition: background-color 0.3s, color 0.3s;
       display: flex;
       flex-direction: column;
       align-items: center;
+      touch-action: manipulation;
     }
 
-    h1 {
-      margin-bottom: 0.5rem;
-    }
+    h1 { margin: 0 0 0.5rem; }
+    h2 { margin: 0.5rem 0; }
 
-    .poem {
+    /* Poem (visible in light mode) */
+    .poem-snippet {
+      position: relative;
+      margin: 0.5rem 0 2rem;
       font-style: italic;
-      opacity: 0.8;
-      margin-bottom: 2rem;
+      color: #444;
       text-align: center;
-      max-width: 600px;
+      max-width: 650px;
+      z-index: 1;
+      opacity: 0.9;
+    }
+
+    .container {
+      display: flex;
+      justify-content: space-between;
+      width: 92%;
+      max-width: 1200px;
+      gap: 2rem;
+      align-items: flex-start;
+    }
+
+    .image-game {
+      flex: 1;
+      text-align: center;
+      padding: 1rem;
+      background: var(--card-bg);
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
     }
 
     .image-display {
       max-width: 100%;
-      max-height: 400px;
+      max-height: 420px;
       border-radius: 8px;
-      margin: 1rem 0;
+      margin: 1rem auto;
+      display: block;
+      background: #ddd;
     }
 
-    .buttons button {
-      margin: 0.3rem;
-      padding: 12px 18px;
-      font-size: 1.2rem;
-      border-radius: 6px;
+    .scale-options {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 0.5rem;
+      user-select: none;
+    }
+
+    .scale-options .label {
+      font-weight: 700;
+      opacity: 0.85;
+      margin: 0 0.25rem;
+    }
+
+    .scale-options button {
+      margin: 4px;
+      padding: 10px 14px;
+      font-size: 1.1rem;
       border: none;
       cursor: pointer;
-      background: #007bff;
-      color: white;
+      border-radius: 6px;
+      background-color: #007bff;
+      color: #fff;
+    }
+
+    .scale-options button:active { transform: translateY(1px); }
+
+    /* Hidden by default in LIGHT mode (matches your old “reveal”) */
+    .info,
+    .log {
+      display: none;
+      flex: 1;
+      background: var(--card-bg);
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      overflow-y: auto;
+    }
+
+    .info {
+      width: 92%;
+      max-width: 1200px;
+      margin: 0 0 1.5rem;
     }
 
     .log {
-      margin-top: 2rem;
-      width: 100%;
-      max-width: 800px;
-      background: white;
-      padding: 1rem;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      max-height: 200px;
-      overflow-y: auto;
+      max-height: 520px;
+      font-size: 0.95rem;
+      white-space: pre-line;
+    }
+
+    .log p { margin: 0.35rem 0; }
+
+    /* Mobile layout */
+    @media (max-width: 900px) {
+      .container { flex-direction: column; }
+      .log { max-height: 260px; }
+    }
+
+    /* 🌙 DARK MODE ONLY OVERRIDES (ported from last year) */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #121212;
+        --text-color: #f2f2f2;
+        --card-bg: #000;
+      }
+
+      body,
+      .info,
+      .log,
+      h1,
+      h2 {
+        color: #00ff00 !important;
+        font-family: "Courier New", monospace;
+      }
+
+      .info,
+      .log {
+        display: block;               /* reveal in dark mode */
+        background-color: black !important;
+        border: 1px solid rgba(0,255,0,0.2);
+        box-shadow: 0 0 0 rgba(0,0,0,0);
+      }
+
+      .image-game {
+        background-color: #0b0b0b;
+        border: 1px solid rgba(0,255,0,0.2);
+        box-shadow: none;
+      }
+
+      h1, h2 {
+        text-shadow: 0 0 5px #00ff00;
+      }
+
+      .poem-snippet {
+        display: none;                /* hide poem in dark mode */
+      }
+
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-thumb { background-color: #00ff00; }
     }
   </style>
 </head>
@@ -63,72 +175,175 @@
 <body>
   <h1>Hidden in Plain Sight</h1>
 
-  <div class="poem">
-    What meets the eye may not be true,<br />
-    In filtered light or altered hue.<br />
-    Where real and fake may look the same,<br />
-    Perspective shifts the truth we claim.
+  <div class="poem-snippet" id="poemHint">
+    <p>
+      <em>
+        What meets the eye may not be true,<br />
+        In filtered light or altered hue.<br />
+        A darker mode reveals the frame,<br />
+        Where real and fake are not the same.
+      </em>
+    </p>
   </div>
 
-  <h2>Is this a Real Photo?</h2>
-
-  <img id="quiz-image" class="image-display" src="" alt="Guess image" />
-
-  <div class="buttons">
-    FAKE
-    <button onclick="guess(1)">1</button>
-    <button onclick="guess(2)">2</button>
-    <button onclick="guess(3)">3</button>
-    <button onclick="guess(4)">4</button>
-    <button onclick="guess(5)">5</button>
-    REAL
+  <!-- Device Info (reveals in dark mode) -->
+  <div class="info" id="infoBox">
+    <h2>Device Info</h2>
+    <p><strong>User Agent:</strong> <span id="userAgent"></span></p>
+    <p><strong>Screen Resolution:</strong> <span id="screenRes"></span></p>
+    <p><strong>Platform:</strong> <span id="platform"></span></p>
+    <p><strong>Device Type:</strong> <span id="deviceType"></span></p>
+    <p><strong>Touch Support:</strong> <span id="touchSupport"></span></p>
+    <p><strong>Dark Mode:</strong> <span id="darkMode"></span></p>
+    <p><strong>Language:</strong> <span id="language"></span></p>
   </div>
 
-  <div class="log" id="log"></div>
+  <div class="container">
+    <!-- Game -->
+    <div class="image-game" id="game-container">
+      <h2>Is this a Real Photo?</h2>
+      <img id="quiz-image" class="image-display" src="" alt="Guess if this is real or AI" />
+
+      <div class="scale-options" aria-label="Rating scale">
+        <span class="label">FAKE</span>
+        <button onclick="submitGuess(1)">1</button>
+        <button onclick="submitGuess(2)">2</button>
+        <button onclick="submitGuess(3)">3</button>
+        <button onclick="submitGuess(4)">4</button>
+        <button onclick="submitGuess(5)">5</button>
+        <span class="label">REAL</span>
+      </div>
+    </div>
+
+    <!-- Activity Log (reveals in dark mode) -->
+    <div class="log" id="log">
+      <h2>Live Activity Log</h2>
+    </div>
+  </div>
 
   <script>
-    const images = [
-      { src: "images/TreeHouse_1.jpg", real: true },
-      { src: "images/TreeHouse_2.jpg", real: false },
-      { src: "images/IceCream_1.jpg", real: true },
-      { src: "images/IceCream_2.jpg", real: false },
-      { src: "images/Golden_1.jpg", real: true },
-      { src: "images/Golden_2.jpg", real: false },
-      { src: "images/RollerCoaster_1.jpg", real: true },
-      { src: "images/RollerCoaster_2.jpg", real: false },
-      { src: "images/Sunset_1.jpg", real: true },
-      { src: "images/Sunset_2.jpg", real: false },
-      { src: "images/Soccer_1.jpg", real: true },
-      { src: "images/Soccer_2.jpg", real: false },
-      { src: "images/Pizza_1.jpg", real: true },
-      { src: "images/Pizza_2.jpg", real: false },
-      { src: "images/FireTruck_1.jpg", real: true },
-      { src: "images/FireTruck_2.jpg", real: false },
-      { src: "images/Students_1.jpg", real: true },
-      { src: "images/Students_2.jpg", real: false },
-      { src: "images/Deer_1.jpg", real: true },
-      { src: "images/Deer_2.jpg", real: false },
+    // ✅ Local images hosted in your repo (fast + reliable)
+    const imageSet = [
+      { url: "images/TreeHouse_1.jpg", answer: "real", label: "Tree House" },
+      { url: "images/TreeHouse_2.jpg", answer: "fake", label: "Tree House" },
+
+      { url: "images/IceCream_1.jpg", answer: "real", label: "Ice cream cone" },
+      { url: "images/IceCream_2.jpg", answer: "fake", label: "Ice cream cone" },
+
+      { url: "images/Golden_1.jpg", answer: "real", label: "A golden retriever" },
+      { url: "images/Golden_2.jpg", answer: "fake", label: "A golden retriever" },
+
+      { url: "images/RollerCoaster_1.jpg", answer: "real", label: "Roller coaster" },
+      { url: "images/RollerCoaster_2.jpg", answer: "fake", label: "Roller coaster" },
+
+      { url: "images/Sunset_1.jpg", answer: "real", label: "A beach sunset" },
+      { url: "images/Sunset_2.jpg", answer: "fake", label: "A beach sunset" },
+
+      { url: "images/Soccer_1.jpg", answer: "real", label: "Soccer Field" },
+      { url: "images/Soccer_2.jpg", answer: "fake", label: "Soccer Field" },
+
+      { url: "images/Pizza_1.jpg", answer: "real", label: "Pizza with toppings" },
+      { url: "images/Pizza_2.jpg", answer: "fake", label: "Pizza with toppings" },
+
+      { url: "images/FireTruck_1.jpg", answer: "real", label: "Fire truck" },
+      { url: "images/FireTruck_2.jpg", answer: "fake", label: "Fire truck" },
+
+      { url: "images/Students_1.jpg", answer: "real", label: "Classroom with students" },
+      { url: "images/Students_2.jpg", answer: "fake", label: "Classroom with students" },
+
+      { url: "images/Deer_1.jpg", answer: "real", label: "A forest animal" },
+      { url: "images/Deer_2.jpg", answer: "fake", label: "A forest animal" },
     ];
 
-    let current = null;
-    const imgEl = document.getElementById("quiz-image");
-    const logEl = document.getElementById("log");
+    let remainingImages = [];
+    let startTime = 0;
 
-    function nextImage() {
-      current = images[Math.floor(Math.random() * images.length)];
-      imgEl.src = current.src;
-    }
-
-    function guess(val) {
-      const guessReal = val >= 4;
-      const correct = guessReal === current.real;
-      logEl.innerHTML += `<div>${correct ? "✅" : "❌"} You guessed ${guessReal ? "REAL" : "FAKE"}</div>`;
+    function log(msg) {
+      const logEl = document.getElementById("log");
+      if (!logEl) return;
+      const timestamp = new Date().toLocaleTimeString();
+      logEl.innerHTML += `<p>[${timestamp}] ${msg}</p>`;
       logEl.scrollTop = logEl.scrollHeight;
-      nextImage();
     }
 
-    nextImage();
+    function shuffle(arr) {
+      return arr.sort(() => Math.random() - 0.5);
+    }
+
+    function initializeImages() {
+      // Ensure a good mix: copy and shuffle
+      remainingImages = shuffle([...imageSet]);
+    }
+
+    function preloadAndShow(imgData) {
+      const imgEl = document.getElementById("quiz-image");
+      const pre = new Image();
+      pre.onload = () => {
+        imgEl.src = imgData.url;
+        imgEl.setAttribute("data-label", imgData.label);
+        imgEl.setAttribute("data-answer", imgData.answer);
+        imgEl.setAttribute("data-url", imgData.url);
+        startTime = Date.now();
+      };
+      pre.onerror = () => {
+        log(`⚠️ Failed to load image: ${imgData.url} (skipping)`);
+        showImage(); // skip to next
+      };
+      pre.src = imgData.url;
+    }
+
+    function showImage() {
+      if (remainingImages.length === 0) initializeImages();
+      const imgData = remainingImages.shift();
+      preloadAndShow(imgData);
+    }
+
+    function submitGuess(userRating) {
+      const imageEl = document.getElementById("quiz-image");
+      const label = imageEl.getAttribute("data-label") || "Unknown";
+      const answer = imageEl.getAttribute("data-answer") || "unknown";
+
+      const responseTime = Math.max(0, Math.round((Date.now() - startTime) / 1000));
+      log(`Time viewing "${label}": ${responseTime}s`);
+
+      // 3 = unsure
+      let verdict = "Not sure";
+      if (userRating === 3) {
+        verdict = "Not sure";
+      } else if ((userRating >= 4 && answer === "real") || (userRating <= 2 && answer === "fake")) {
+        verdict = "✅ Correct";
+      } else {
+        verdict = "❌ Incorrect";
+      }
+
+      log(`You picked ${userRating} — ${verdict}`);
+      setTimeout(showImage, 500);
+    }
+
+    window.addEventListener("load", () => {
+      log(`Website loaded`);
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+      // Fill device info (only visible in dark mode, but we still populate it)
+      document.getElementById("userAgent").textContent = navigator.userAgent;
+      document.getElementById("screenRes").textContent = `${screen.width} x ${screen.height}`;
+      document.getElementById("platform").textContent = navigator.platform || "Unknown";
+      document.getElementById("language").textContent = navigator.language || "Unknown";
+
+      const ua = navigator.userAgent || "";
+      document.getElementById("deviceType").textContent =
+        /Tablet|iPad/i.test(ua) ? "Tablet" : /Mobi|Android/i.test(ua) ? "Mobile" : "Desktop";
+
+      document.getElementById("touchSupport").textContent =
+        ("ontouchstart" in window || navigator.maxTouchPoints > 0) ? "Yes" : "No";
+
+      const isDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.getElementById("darkMode").textContent = isDark ? "Enabled" : "Disabled";
+
+      initializeImages();
+      showImage();
+    });
   </script>
 </body>
 </html>
-
