@@ -127,7 +127,52 @@
       .log { max-height: 260px; }
     }
 
-    /* 🌙 DARK MODE ONLY OVERRIDES (ported from last year) */
+    /* =========================================================
+       ✅ PROACTIVE DARK MODE (JS toggles body.dark)
+       This ensures immediate visual change when the OS theme flips.
+    ========================================================== */
+    body.dark {
+      --bg-color: #121212;
+      --text-color: #f2f2f2;
+      --card-bg: #000;
+    }
+
+    body.dark,
+    body.dark .info,
+    body.dark .log,
+    body.dark h1,
+    body.dark h2 {
+      color: #00ff00 !important;
+      font-family: "Courier New", monospace;
+    }
+
+    body.dark .info,
+    body.dark .log {
+      display: block;
+      background-color: black !important;
+      border: 1px solid rgba(0,255,0,0.2);
+      box-shadow: 0 0 0 rgba(0,0,0,0);
+    }
+
+    body.dark .image-game {
+      background-color: #0b0b0b;
+      border: 1px solid rgba(0,255,0,0.2);
+      box-shadow: none;
+    }
+
+    body.dark h1,
+    body.dark h2 {
+      text-shadow: 0 0 5px #00ff00;
+    }
+
+    body.dark .poem-snippet {
+      display: none;
+    }
+
+    body.dark ::-webkit-scrollbar { width: 8px; }
+    body.dark ::-webkit-scrollbar-thumb { background-color: #00ff00; }
+
+    /* 🌙 DARK MODE ONLY OVERRIDES (still supported) */
     @media (prefers-color-scheme: dark) {
       :root {
         --bg-color: #121212;
@@ -271,7 +316,6 @@
     }
 
     function initializeImages() {
-      // Ensure a good mix: copy and shuffle
       remainingImages = shuffle([...imageSet]);
     }
 
@@ -287,7 +331,7 @@
       };
       pre.onerror = () => {
         log(`⚠️ Failed to load image: ${imgData.url} (skipping)`);
-        showImage(); // skip to next
+        showImage();
       };
       pre.src = imgData.url;
     }
@@ -306,7 +350,6 @@
       const responseTime = Math.max(0, Math.round((Date.now() - startTime) / 1000));
       log(`Time viewing "${label}": ${responseTime}s`);
 
-      // 3 = unsure
       let verdict = "Not sure";
       if (userRating === 3) {
         verdict = "Not sure";
@@ -320,12 +363,23 @@
       setTimeout(showImage, 500);
     }
 
+    // ✅ NEW: proactively sync theme changes
+    function syncDarkModeClass() {
+      const mq = window.matchMedia("(prefers-color-scheme: dark)");
+      const prefersDark = mq.matches;
+
+      document.body.classList.toggle("dark", prefersDark);
+
+      const dm = document.getElementById("darkMode");
+      if (dm) dm.textContent = prefersDark ? "Enabled" : "Disabled";
+    }
+
     window.addEventListener("load", () => {
       log(`Website loaded`);
     });
 
     window.addEventListener("DOMContentLoaded", () => {
-      // Fill device info (only visible in dark mode, but we still populate it)
+      // Fill device info
       document.getElementById("userAgent").textContent = navigator.userAgent;
       document.getElementById("screenRes").textContent = `${screen.width} x ${screen.height}`;
       document.getElementById("platform").textContent = navigator.platform || "Unknown";
@@ -338,8 +392,11 @@
       document.getElementById("touchSupport").textContent =
         ("ontouchstart" in window || navigator.maxTouchPoints > 0) ? "Yes" : "No";
 
-      const isDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-      document.getElementById("darkMode").textContent = isDark ? "Enabled" : "Disabled";
+      // ✅ Set initial + subscribe to changes
+      syncDarkModeClass();
+      const mq = window.matchMedia("(prefers-color-scheme: dark)");
+      if (mq.addEventListener) mq.addEventListener("change", syncDarkModeClass);
+      else mq.addListener(syncDarkModeClass); // Safari fallback
 
       initializeImages();
       showImage();
