@@ -266,141 +266,283 @@
     </div>
   </div>
 
-  <script>
-    // ✅ Local images hosted in your repo (fast + reliable)
-    const imageSet = [
-      { url: "images/TreeHouse_1.jpg", answer: "real", label: "Tree House" },
-      { url: "images/TreeHouse_2.jpg", answer: "fake", label: "Tree House" },
+<script>
+  // ✅ Local images hosted in your repo (fast + reliable)
+  const imageSet = [
+    { url: "images/TreeHouse_1.jpg", answer: "real", label: "Tree House" },
+    { url: "images/TreeHouse_2.jpg", answer: "fake", label: "Tree House" },
 
-      { url: "images/IceCream_1.jpg", answer: "real", label: "Ice cream cone" },
-      { url: "images/IceCream_2.jpg", answer: "fake", label: "Ice cream cone" },
+    { url: "images/IceCream_1.jpg", answer: "real", label: "Ice cream cone" },
+    { url: "images/IceCream_2.jpg", answer: "fake", label: "Ice cream cone" },
 
-      { url: "images/Golden_1.jpg", answer: "real", label: "A golden retriever" },
-      { url: "images/Golden_2.jpg", answer: "fake", label: "A golden retriever" },
+    { url: "images/Golden_1.jpg", answer: "real", label: "A golden retriever" },
+    { url: "images/Golden_2.jpg", answer: "fake", label: "A golden retriever" },
 
-      { url: "images/RollerCoaster_1.jpg", answer: "real", label: "Roller coaster" },
-      { url: "images/RollerCoaster_2.jpg", answer: "fake", label: "Roller coaster" },
+    { url: "images/RollerCoaster_1.jpg", answer: "real", label: "Roller coaster" },
+    { url: "images/RollerCoaster_2.jpg", answer: "fake", label: "Roller coaster" },
 
-      { url: "images/Sunset_1.jpg", answer: "real", label: "A beach sunset" },
-      { url: "images/Sunset_2.jpg", answer: "fake", label: "A beach sunset" },
+    { url: "images/Sunset_1.jpg", answer: "real", label: "A beach sunset" },
+    { url: "images/Sunset_2.jpg", answer: "fake", label: "A beach sunset" },
 
-      { url: "images/Soccer_1.jpg", answer: "real", label: "Soccer Field" },
-      { url: "images/Soccer_2.jpg", answer: "fake", label: "Soccer Field" },
+    { url: "images/Soccer_1.jpg", answer: "real", label: "Soccer Field" },
+    { url: "images/Soccer_2.jpg", answer: "fake", label: "Soccer Field" },
 
-      { url: "images/Pizza_1.jpg", answer: "real", label: "Pizza with toppings" },
-      { url: "images/Pizza_2.jpg", answer: "fake", label: "Pizza with toppings" },
+    { url: "images/Pizza_1.jpg", answer: "real", label: "Pizza with toppings" },
+    { url: "images/Pizza_2.jpg", answer: "fake", label: "Pizza with toppings" },
 
-      { url: "images/FireTruck_1.jpg", answer: "real", label: "Fire truck" },
-      { url: "images/FireTruck_2.jpg", answer: "fake", label: "Fire truck" },
+    { url: "images/FireTruck_1.jpg", answer: "real", label: "Fire truck" },
+    { url: "images/FireTruck_2.jpg", answer: "fake", label: "Fire truck" },
 
-      { url: "images/Students_1.jpg", answer: "real", label: "Classroom with students" },
-      { url: "images/Students_2.jpg", answer: "fake", label: "Classroom with students" },
+    { url: "images/Students_1.jpg", answer: "real", label: "Classroom with students" },
+    { url: "images/Students_2.jpg", answer: "fake", label: "Classroom with students" },
 
-      { url: "images/Deer_1.jpg", answer: "real", label: "A forest animal" },
-      { url: "images/Deer_2.jpg", answer: "fake", label: "A forest animal" },
-    ];
+    { url: "images/Deer_1.jpg", answer: "real", label: "A forest animal" },
+    { url: "images/Deer_2.jpg", answer: "fake", label: "A forest animal" },
+  ];
 
-    let remainingImages = [];
-    let startTime = 0;
+  // ✅ Game limits
+  const MAX_IMAGES = 20;
+  const MAX_SECONDS = 60;
 
-    function log(msg) {
-      const logEl = document.getElementById("log");
-      if (!logEl) return;
-      const timestamp = new Date().toLocaleTimeString();
-      logEl.innerHTML += `<p>[${timestamp}] ${msg}</p>`;
-      logEl.scrollTop = logEl.scrollHeight;
-    }
+  let remainingImages = [];
+  let currentImageStart = 0;
+  let currentImageData = null;
 
-    function shuffle(arr) {
-      return arr.sort(() => Math.random() - 0.5);
-    }
+  let answeredCount = 0;
+  let gameStart = 0;
+  let gameEnded = false;
+  let timerInterval = null;
 
-    function initializeImages() {
-      remainingImages = shuffle([...imageSet]);
-    }
+  // Track the single longest-viewed image
+  let longestViewed = { label: "", seconds: 0, url: "" };
 
-    function preloadAndShow(imgData) {
-      const imgEl = document.getElementById("quiz-image");
-      const pre = new Image();
-      pre.onload = () => {
-        imgEl.src = imgData.url;
-        imgEl.setAttribute("data-label", imgData.label);
-        imgEl.setAttribute("data-answer", imgData.answer);
-        imgEl.setAttribute("data-url", imgData.url);
-        startTime = Date.now();
-      };
-      pre.onerror = () => {
-        log(`⚠️ Failed to load image: ${imgData.url} (skipping)`);
-        showImage();
-      };
-      pre.src = imgData.url;
-    }
+  function log(msg) {
+    const logEl = document.getElementById("log");
+    if (!logEl) return;
+    const timestamp = new Date().toLocaleTimeString();
+    logEl.innerHTML += `<p>[${timestamp}] ${msg}</p>`;
+    logEl.scrollTop = logEl.scrollHeight;
+  }
 
-    function showImage() {
-      if (remainingImages.length === 0) initializeImages();
-      const imgData = remainingImages.shift();
-      preloadAndShow(imgData);
-    }
+  function shuffle(arr) {
+    return arr.sort(() => Math.random() - 0.5);
+  }
 
-    function submitGuess(userRating) {
-      const imageEl = document.getElementById("quiz-image");
-      const label = imageEl.getAttribute("data-label") || "Unknown";
-      const answer = imageEl.getAttribute("data-answer") || "unknown";
+  function initializeImages() {
+    // start with a shuffled copy
+    remainingImages = shuffle([...imageSet]);
+  }
 
-      const responseTime = Math.max(0, Math.round((Date.now() - startTime) / 1000));
-      log(`Time viewing "${label}": ${responseTime}s`);
+  function secondsElapsedSince(startMs) {
+    return Math.max(0, Math.round((Date.now() - startMs) / 1000));
+  }
 
-      let verdict = "Not sure";
-      if (userRating === 3) {
-        verdict = "Not sure";
-      } else if ((userRating >= 4 && answer === "real") || (userRating <= 2 && answer === "fake")) {
-        verdict = "✅ Correct";
-      } else {
-        verdict = "❌ Incorrect";
+  function shouldEndGame() {
+    const timeUp = secondsElapsedSince(gameStart) >= MAX_SECONDS;
+    const imagesDone = answeredCount >= MAX_IMAGES;
+    return timeUp || imagesDone;
+  }
+
+  function endGame(reason) {
+    if (gameEnded) return;
+    gameEnded = true;
+
+    if (timerInterval) clearInterval(timerInterval);
+
+    log(`🏁 Game ended: ${reason}`);
+
+    const gameContainer = document.getElementById("game-container");
+    const bestLabel = longestViewed.label || "No data";
+    const bestTime = longestViewed.seconds || 0;
+
+    gameContainer.innerHTML = `
+      <h2>Conclusion</h2>
+      <p>You answered <strong>${answeredCount}</strong> images in <strong>${secondsElapsedSince(gameStart)}s</strong>.</p>
+      <p><strong>Longest viewed type:</strong> ${bestLabel} (${bestTime}s)</p>
+      ${
+        longestViewed.url
+          ? `<img src="${longestViewed.url}" alt="Longest viewed" style="max-width:100%; max-height:320px; border-radius:8px; margin: 1rem auto; display:block;">`
+          : ""
       }
+      <button onclick="restartGame()" style="
+        margin-top: 0.5rem;
+        padding: 12px 18px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        background: #28a745;
+        border: none;
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+      ">Play Again</button>
+    `;
+  }
 
-      log(`You picked ${userRating} — ${verdict}`);
-      setTimeout(showImage, 500);
+  function preloadAndShow(imgData) {
+    const imgEl = document.getElementById("quiz-image");
+    const pre = new Image();
+
+    pre.onload = () => {
+      if (gameEnded) return;
+
+      currentImageData = imgData;
+      currentImageStart = Date.now();
+
+      imgEl.src = imgData.url;
+      imgEl.setAttribute("data-label", imgData.label);
+      imgEl.setAttribute("data-answer", imgData.answer);
+      imgEl.setAttribute("data-url", imgData.url);
+    };
+
+    pre.onerror = () => {
+      log(`⚠️ Failed to load image: ${imgData.url} (skipping)`);
+      showImage(); // skip
+    };
+
+    pre.src = imgData.url;
+  }
+
+  function showImage() {
+    if (gameEnded) return;
+
+    if (shouldEndGame()) {
+      endGame(answeredCount >= MAX_IMAGES ? `Reached ${MAX_IMAGES} images` : `Reached ${MAX_SECONDS} seconds`);
+      return;
     }
 
-    // ✅ NEW: proactively sync theme changes
-    function syncDarkModeClass() {
-      const mq = window.matchMedia("(prefers-color-scheme: dark)");
-      const prefersDark = mq.matches;
+    if (remainingImages.length === 0) initializeImages();
+    const imgData = remainingImages.shift();
+    preloadAndShow(imgData);
+  }
 
-      document.body.classList.toggle("dark", prefersDark);
+  function submitGuess(userRating) {
+    if (gameEnded) return;
 
-      const dm = document.getElementById("darkMode");
-      if (dm) dm.textContent = prefersDark ? "Enabled" : "Disabled";
+    const imageEl = document.getElementById("quiz-image");
+    const label = imageEl.getAttribute("data-label") || "Unknown";
+    const answer = imageEl.getAttribute("data-answer") || "unknown";
+    const url = imageEl.getAttribute("data-url") || "";
+
+    // time on current image
+    const viewSeconds = currentImageStart ? secondsElapsedSince(currentImageStart) : 0;
+
+    // Track longest-viewed image
+    if (viewSeconds > longestViewed.seconds) {
+      longestViewed = { label, seconds: viewSeconds, url };
     }
 
-    window.addEventListener("load", () => {
-      log(`Website loaded`);
-    });
+    log(`Time viewing "${label}": ${viewSeconds}s`);
 
-    window.addEventListener("DOMContentLoaded", () => {
-      // Fill device info
-      document.getElementById("userAgent").textContent = navigator.userAgent;
-      document.getElementById("screenRes").textContent = `${screen.width} x ${screen.height}`;
-      document.getElementById("platform").textContent = navigator.platform || "Unknown";
-      document.getElementById("language").textContent = navigator.language || "Unknown";
+    // score message (optional)
+    let verdict = "Not sure";
+    if (userRating === 3) {
+      verdict = "Not sure";
+    } else if ((userRating >= 4 && answer === "real") || (userRating <= 2 && answer === "fake")) {
+      verdict = "✅ Correct";
+    } else {
+      verdict = "❌ Incorrect";
+    }
+    log(`You picked ${userRating} — ${verdict}`);
 
-      const ua = navigator.userAgent || "";
-      document.getElementById("deviceType").textContent =
-        /Tablet|iPad/i.test(ua) ? "Tablet" : /Mobi|Android/i.test(ua) ? "Mobile" : "Desktop";
+    answeredCount++;
 
-      document.getElementById("touchSupport").textContent =
-        ("ontouchstart" in window || navigator.maxTouchPoints > 0) ? "Yes" : "No";
+    if (shouldEndGame()) {
+      endGame(answeredCount >= MAX_IMAGES ? `Reached ${MAX_IMAGES} images` : `Reached ${MAX_SECONDS} seconds`);
+      return;
+    }
 
-      // ✅ Set initial + subscribe to changes
-      syncDarkModeClass();
-      const mq = window.matchMedia("(prefers-color-scheme: dark)");
-      if (mq.addEventListener) mq.addEventListener("change", syncDarkModeClass);
-      else mq.addListener(syncDarkModeClass); // Safari fallback
+    setTimeout(showImage, 450);
+  }
 
-      initializeImages();
-      showImage();
-    });
-  </script>
+  function restartGame() {
+    // reset state
+    remainingImages = [];
+    currentImageStart = 0;
+    currentImageData = null;
+
+    answeredCount = 0;
+    gameStart = Date.now();
+    gameEnded = false;
+
+    longestViewed = { label: "", seconds: 0, url: "" };
+
+    // clear log
+    document.getElementById("log").innerHTML = `<h2>Live Activity Log</h2>`;
+
+    // restore game UI (in case we were on conclusion screen)
+    document.getElementById("game-container").innerHTML = `
+      <h2>Is this a Real Photo?</h2>
+      <img id="quiz-image" class="image-display" src="" alt="Guess if this is real or AI" />
+
+      <div class="scale-options" aria-label="Rating scale">
+        <span class="label">FAKE</span>
+        <button onclick="submitGuess(1)">1</button>
+        <button onclick="submitGuess(2)">2</button>
+        <button onclick="submitGuess(3)">3</button>
+        <button onclick="submitGuess(4)">4</button>
+        <button onclick="submitGuess(5)">5</button>
+        <span class="label">REAL</span>
+      </div>
+    `;
+
+    // start
+    initializeImages();
+    showImage();
+
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      if (!gameEnded && shouldEndGame()) {
+        endGame(`Reached ${MAX_SECONDS} seconds`);
+      }
+    }, 250);
+
+    log("🔁 Restarted game");
+  }
+
+  // ✅ Theme syncing (from earlier)
+  function syncDarkModeClass() {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const prefersDark = mq.matches;
+
+    document.body.classList.toggle("dark", prefersDark);
+
+    const dm = document.getElementById("darkMode");
+    if (dm) dm.textContent = prefersDark ? "Enabled" : "Disabled";
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    // Device info
+    document.getElementById("userAgent").textContent = navigator.userAgent;
+    document.getElementById("screenRes").textContent = `${screen.width} x ${screen.height}`;
+    document.getElementById("platform").textContent = navigator.platform || "Unknown";
+    document.getElementById("language").textContent = navigator.language || "Unknown";
+
+    const ua = navigator.userAgent || "";
+    document.getElementById("deviceType").textContent =
+      /Tablet|iPad/i.test(ua) ? "Tablet" : /Mobi|Android/i.test(ua) ? "Mobile" : "Desktop";
+
+    document.getElementById("touchSupport").textContent =
+      ("ontouchstart" in window || navigator.maxTouchPoints > 0) ? "Yes" : "No";
+
+    // Theme
+    syncDarkModeClass();
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    if (mq.addEventListener) mq.addEventListener("change", syncDarkModeClass);
+    else mq.addListener(syncDarkModeClass);
+
+    // Start game
+    gameStart = Date.now();
+    initializeImages();
+    showImage();
+
+    timerInterval = setInterval(() => {
+      if (!gameEnded && shouldEndGame()) {
+        endGame(`Reached ${MAX_SECONDS} seconds`);
+      }
+    }, 250);
+
+    log("Website loaded");
+  });
+</script>
 </body>
 </html>
